@@ -1,5 +1,7 @@
-#include "wifi_server.h"
-#include "stepper_motor.h"
+#include "network/wifi_server.h"
+#include "stepper/stepper_motor.h"
+
+#define USE_MULTCORE 1
 void setup() {
     Serial.begin(9600);
 init_steppers();
