@@ -1,7 +1,5 @@
 #include "wifi_server.h"
 
-#include "stepper_motor.h"
-
 AsyncWebServer *server = new AsyncWebServer(80);
 
 void connect_wifi(String ssid, String password) {
@@ -20,7 +18,7 @@ void start_server() {
     request->send(200, "text/plain", "Connected!");
   });
   server->on("/rotate", HTTP_POST, [](AsyncWebServerRequest *request) {
-    float angle = request->getParam("angle")->value().toFloat();
+    float angle = request->getParam("angle")->value().toFloat() * 3.33;
     float rpm = request->getParam("rpm")->value().toFloat();
     rotate_stepper.setRPM(rpm);
     Serial.printf("Rotating %f degrees\n", angle);
@@ -32,18 +30,9 @@ void start_server() {
     start_moving(rotate_stepper, angle);
     pitch_stepper.setRPM(RPM);
   });
-  //   server->on("/rotate/right", HTTP_POST, [](AsyncWebServerRequest *request)
-  //   {
-  //     request->send(200, "text/plain", "Rotating right");
-  //     Serial.println("Rotating right");
-  //     start_moving(rotate_stepper, Right);
-  //   });
-  //   server->on("/rotate/stop", HTTP_POST, [](AsyncWebServerRequest *request) {
-  //     request->send(200, "text/plain", "Stopping");
-  //     stop_moving(rotate_stepper);
-  //   });
+
   server->on("/pitch", HTTP_POST, [](AsyncWebServerRequest *request) {
-    float angle = request->getParam("angle")->value().toFloat();
+    float angle = request->getParam("angle")->value().toFloat() * 9;
     float rpm = request->getParam("rpm")->value().toFloat();
     pitch_stepper.setRPM(rpm);
     Serial.printf("Pitching %f degrees\n", angle);
@@ -55,18 +44,9 @@ void start_server() {
     start_moving(pitch_stepper, angle);
     pitch_stepper.setRPM(RPM);
   });
-  //   server->on("/pitch/down", HTTP_POST, [](AsyncWebServerRequest *request) {
-  //     request->send(200, "text/plain", "Pitching down");
-  //     Serial.println("Pitching down");
-  //     start_moving(pitch_stepper, Down);
-  //   });
-  //   server->on("/pitch/stop", HTTP_POST, [](AsyncWebServerRequest *request) {
-  //     request->send(200, "text/plain", "Stopping");
-  //     Serial.println("Stopping");
-  //     stop_moving(pitch_stepper);
-  //   });
+
   server->on("/second_pitch", HTTP_POST, [](AsyncWebServerRequest *request) {
-    float angle = request->getParam("angle")->value().toFloat();
+    float angle = request->getParam("angle")->value().toFloat() * 9;
     float rpm = request->getParam("rpm")->value().toFloat();
     second_pitch_stepper.setRPM(rpm);
     Serial.printf("Rotating %f degrees\n", angle);
@@ -78,25 +58,15 @@ void start_server() {
     start_moving(second_pitch_stepper, angle);
     second_pitch_stepper.setRPM(RPM);
   });
-  //   server->on("/second_pitch/down", HTTP_POST,
-  //              [](AsyncWebServerRequest *request) {
-  //                request->send(200, "text/plain", "Second pitch down");
-  //                Serial.println("Second pitch down");
-  //                start_moving(second_pitch_stepper, Down);
-  //              });
-  //   server->on("/second_pitch/stop", HTTP_POST,
-  //              [](AsyncWebServerRequest *request) {
-  //                request->send(200, "text/plain", "Stopping");
-  //                Serial.println("Stopping");
-  //                stop_moving(second_pitch_stepper);
-  //              });
+
   server->on("/combined", HTTP_POST, [](AsyncWebServerRequest *request) {
-    float rotate = request->getParam("rotate")->value().toFloat();
+    float rotate = request->getParam("rotate")->value().toFloat() * 3.33;
     int rotate_rpm = request->getParam("rotate_rpm")->value().toInt();
-    float pitch = request->getParam("pitch")->value().toFloat();
+    float pitch = request->getParam("pitch")->value().toFloat() * 9;
     int pitch_rpm = request->getParam("pitch_rpm")->value().toInt();
     float second_pitch = request->getParam("second_pitch")->value().toFloat();
-    int second_pitch_rpm = request->getParam("second_pitch_rpm")->value().toInt();
+    int second_pitch_rpm =
+        request->getParam("second_pitch_rpm")->value().toInt() * 9;
     rotate_stepper.setRPM(rotate_rpm);
     pitch_stepper.setRPM(pitch_rpm);
     second_pitch_stepper.setRPM(second_pitch_rpm);
@@ -116,11 +86,25 @@ void start_server() {
     pitch_stepper.setRPM(RPM);
     second_pitch_stepper.setRPM(RPM);
   });
-  //   server->on("/combined/down", HTTP_POST, [](AsyncWebServerRequest *request)
-  //   {
-  //     request->send(200, "text/plain", "Combinded down");
-  //     Serial.println("Combinded down");
-  //     combined_moving(Down);
-  //   });
+
+  server->on("/head_pitch", HTTP_POST, [](AsyncWebServerRequest *request) {
+    int angle = request->getParam("angle")->value().toInt();
+    pitch_servo.write(angle);
+    Serial.printf("Servo angle: %d\n", angle);
+    JsonDocument doc;
+    doc["on_going"] = "servo";
+    doc["angle"] = angle;
+    request->send(200, "application/json", doc.as<String>());
+  });
+
+  server->on("/head_claw", HTTP_POST, [](AsyncWebServerRequest *request) {
+    int angle = request->getParam("angle")->value().toInt();
+    claw_servo.write(angle);
+    Serial.printf("Servo angle: %d\n", angle);
+    JsonDocument doc;
+    doc["on_going"] = "servo";
+    doc["angle"] = angle;
+    request->send(200, "application/json", doc.as<String>());
+  });
   server->begin();
 }

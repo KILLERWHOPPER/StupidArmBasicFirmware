@@ -8,6 +8,8 @@
 #include <SPIFFS.h>
 #include <WiFi.h>
 #include "ArduinoJson.h"
+#include "stepper/stepper_motor.h"
+#include "servo/servo_driver.h"
 
 extern AsyncWebServer *server;
 
